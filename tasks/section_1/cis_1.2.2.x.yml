@@ -19,6 +19,16 @@
       register: discovered_pkg_updates
 
     # Resetting connection as ssh stops if patched reset connection kickstarts it
-    - name: "1.2.2.1 | PATCH | Ensure updates, patches, and additional security software are installed | reset ansible connection if ssh updated"
+    - name: "1.2.2.1 | PATCH | Ensure updates, patches, and additional security software are installed | Reset Ansible connection if SSH updated"
       when: "'openssh-server' in discovered_pkg_updates.stdout"
       ansible.builtin.meta: reset_connection
+
+    - name: "1.2.2.1 | PATCH | Ensure updates, patches, and additional security software are installed | Wait after resetting Ansible connection"
+      vars:
+        retries_number: 6
+      ansible.builtin.wait_for_connection:
+        connect_timeout: 5
+        timeout: 5
+      retries: "{{ retries_number }}"
+      delay: "{{ item | int }}"
+      loop: "{{ range(1, retries_number) | map('pow', 2) }}"
